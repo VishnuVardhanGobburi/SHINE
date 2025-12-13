@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
+import os
+st.write("Current working directory:", os.getcwd())
+st.write("Files in directory:", os.listdir("."))
+
 # -----------------------------
 # Page config
 # -----------------------------
@@ -119,3 +123,4 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
