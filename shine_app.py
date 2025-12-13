@@ -9,7 +9,6 @@ st.set_page_config(
 )
 
 st.title("SHINE Research Explorer")
-st.caption("Browse and search annotated scholarship in distance education")
 
 # SQLite connection
 def get_connection():
@@ -139,4 +138,5 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
 
