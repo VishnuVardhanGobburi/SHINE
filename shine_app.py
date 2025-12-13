@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pyodbc
+import sqlite3
 
 # Page config
 st.set_page_config(
@@ -107,5 +107,6 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
 
 
