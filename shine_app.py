@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
+# -----------------------------
 # Page config
+# -----------------------------
 st.set_page_config(
     page_title="SHINE Research Explorer",
     layout="wide"
@@ -10,47 +12,32 @@ st.set_page_config(
 
 st.title("SHINE Research Explorer")
 
-# Database connection
+# -----------------------------
 # SQLite connection
+# -----------------------------
 @st.cache_resource
 def get_connection():
     return sqlite3.connect("shine.db", check_same_thread=False)
 
 conn = get_connection()
 
+# -----------------------------
+# Load data from SQLite
+# -----------------------------
 @st.cache_data
-def load_search_data():
+def load_data():
     query = "SELECT * FROM research_search"
     return pd.read_sql(query, conn)
 
-df = load_search_data()
+df = load_data()
 
-# Load data
-def load_search_data():
-    query = """
-        SELECT *
-        FROM shine_transformed.vw_research_search
-    """
-    return pd.read_sql(query, conn)
-
-
-def load_filter_data():
-    query = """
-        SELECT DISTINCT
-            author_name,
-            keyword
-        FROM shine_transformed.vw_research_exploded
-    """
-    return pd.read_sql(query, conn)
-
-df = load_search_data()
-filters_df = load_filter_data()
-
+# -----------------------------
 # Sidebar filters
+# -----------------------------
 st.sidebar.header("🔍 Filters")
 
-authors = ["All"] + sorted(filters_df["author_name"].dropna().unique().tolist())
-keywords = ["All"] + sorted(filters_df["keyword"].dropna().unique().tolist())
+authors = ["All"] + sorted(df["authors"].dropna().unique().tolist())
+keywords = ["All"] + sorted(df["keywords"].dropna().unique().tolist())
 
 selected_author = st.sidebar.selectbox("Author", authors)
 selected_keyword = st.sidebar.selectbox("Keyword", keywords)
@@ -67,7 +54,9 @@ year_range = st.sidebar.slider(
 
 search_text = st.sidebar.text_input("Search title or annotation")
 
+# -----------------------------
 # Apply filters
+# -----------------------------
 filtered_df = df.copy()
 
 if selected_author != "All":
@@ -91,13 +80,36 @@ if search_text:
         filtered_df["annotation"].str.contains(search_text, case=False, na=False)
     ]
 
-# Results
-st.subheader(f"Results ({len(filtered_df)})")
+# -----------------------------
+# Featured vs search logic (Top 2)
+# -----------------------------
+show_featured_only = (
+    not search_text
+    and selected_author == "All"
+    and selected_keyword == "All"
+)
 
-if filtered_df.empty:
+if show_featured_only:
+    display_df = (
+        filtered_df
+        .sort_values(
+            by=["publication_year", "source_timestamp"],
+            ascending=False
+        )
+        .head(2)
+    )
+    st.subheader("Featured Research")
+else:
+    display_df = filtered_df
+    st.subheader(f"Results ({len(display_df)})")
+
+# -----------------------------
+# Display results
+# -----------------------------
+if display_df.empty:
     st.info("No results match the selected filters.")
 else:
-    for _, row in filtered_df.iterrows():
+    for _, row in display_df.iterrows():
         with st.expander(row["title"]):
             st.markdown(f"**Authors:** {row['authors']}")
             st.markdown(f"**Publication Year:** {row['publication_year']}")
@@ -107,6 +119,3 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
-
-
-
