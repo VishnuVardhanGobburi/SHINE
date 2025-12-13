@@ -24,6 +24,14 @@ def get_connection():
     return sqlite3.connect("shine.db", check_same_thread=False)
 
 conn = get_connection()
+st.write("Inspecting SQLite tables:")
+
+tables = pd.read_sql(
+    "SELECT name FROM sqlite_master WHERE type='table';",
+    conn
+)
+
+st.write(tables)
 
 # -----------------------------
 # Load data from SQLite
@@ -123,4 +131,5 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
 
