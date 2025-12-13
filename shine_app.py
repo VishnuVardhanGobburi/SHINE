@@ -2,23 +2,18 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-# --------------------------------------------------
 # Page config
-# --------------------------------------------------
 st.set_page_config(
     page_title="SHINE Research Explorer",
     layout="wide"
 )
 
-st.title("📚 SHINE Research Explorer")
+st.title("SHINE Research Explorer")
 st.caption("Browse and search annotated scholarship in distance education")
 
-# --------------------------------------------------
 # SQLite connection
-# --------------------------------------------------
-@st.cache_resource
 def get_connection():
-    return sqlite3.connect("shine.db", check_same_thread=False)
+    return sqlite3.connect("shine1.db", check_same_thread=False)
 
 conn = get_connection()
 
@@ -159,3 +154,4 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
