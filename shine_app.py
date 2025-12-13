@@ -14,10 +14,10 @@ st.title("SHINE Research Explorer")
 def get_connection():
     return pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
-        "SERVER=localhost;"
-        "DATABASE=SHINE_DB;"
-        "UID=shine_user;"
-        "PWD=Qweasdzxc@2811"
+        f"SERVER={st.secrets['db']['server']};"
+        f"DATABASE={st.secrets['db']['database']};"
+        f"UID={st.secrets['db']['user']};"
+        f"PWD={st.secrets['db']['password']}"
     )
 
 conn = get_connection()
@@ -104,3 +104,4 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
