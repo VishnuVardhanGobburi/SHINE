@@ -2,40 +2,29 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-import os
-st.write("Current working directory:", os.getcwd())
-st.write("Files in directory:", os.listdir("."))
-
-# -----------------------------
+# --------------------------------------------------
 # Page config
-# -----------------------------
+# --------------------------------------------------
 st.set_page_config(
     page_title="SHINE Research Explorer",
     layout="wide"
 )
 
-st.title("SHINE Research Explorer")
+st.title("📚 SHINE Research Explorer")
+st.caption("Browse and search annotated scholarship in distance education")
 
-# -----------------------------
+# --------------------------------------------------
 # SQLite connection
-# -----------------------------
+# --------------------------------------------------
 @st.cache_resource
 def get_connection():
     return sqlite3.connect("shine.db", check_same_thread=False)
 
 conn = get_connection()
-st.write("Inspecting SQLite tables:")
 
-tables = pd.read_sql(
-    "SELECT name FROM sqlite_master WHERE type='table';",
-    conn
-)
-
-st.write(tables)
-
-# -----------------------------
-# Load data from SQLite
-# -----------------------------
+# --------------------------------------------------
+# Load aggregated data from SQLite
+# --------------------------------------------------
 @st.cache_data
 def load_data():
     query = "SELECT * FROM research_search"
@@ -43,13 +32,52 @@ def load_data():
 
 df = load_data()
 
-# -----------------------------
+# --------------------------------------------------
+# Create exploded dataframe for filters
+# --------------------------------------------------
+def explode_for_filters(df):
+    exploded = df.copy()
+
+    exploded["author_name"] = (
+        exploded["authors"]
+        .fillna("")
+        .str.split(";")
+        .explode()
+        .str.strip()
+    )
+
+    exploded["keyword"] = (
+        exploded["keywords"]
+        .fillna("")
+        .str.split(",")
+        .explode()
+        .str.strip()
+    )
+
+    return exploded
+
+exploded_df = explode_for_filters(df)
+
+# --------------------------------------------------
 # Sidebar filters
-# -----------------------------
+# --------------------------------------------------
 st.sidebar.header("🔍 Filters")
 
-authors = ["All"] + sorted(df["authors"].dropna().unique().tolist())
-keywords = ["All"] + sorted(df["keywords"].dropna().unique().tolist())
+authors = ["All"] + sorted(
+    exploded_df["author_name"]
+    .replace("", pd.NA)
+    .dropna()
+    .unique()
+    .tolist()
+)
+
+keywords = ["All"] + sorted(
+    exploded_df["keyword"]
+    .replace("", pd.NA)
+    .dropna()
+    .unique()
+    .tolist()
+)
 
 selected_author = st.sidebar.selectbox("Author", authors)
 selected_keyword = st.sidebar.selectbox("Keyword", keywords)
@@ -66,9 +94,9 @@ year_range = st.sidebar.slider(
 
 search_text = st.sidebar.text_input("Search title or annotation")
 
-# -----------------------------
-# Apply filters
-# -----------------------------
+# --------------------------------------------------
+# Apply filters (on aggregated df)
+# --------------------------------------------------
 filtered_df = df.copy()
 
 if selected_author != "All":
@@ -92,9 +120,9 @@ if search_text:
         filtered_df["annotation"].str.contains(search_text, case=False, na=False)
     ]
 
-# -----------------------------
-# Featured vs search logic (Top 2)
-# -----------------------------
+# --------------------------------------------------
+# Featured vs Search logic
+# --------------------------------------------------
 show_featured_only = (
     not search_text
     and selected_author == "All"
@@ -110,14 +138,14 @@ if show_featured_only:
         )
         .head(2)
     )
-    st.subheader("Featured Research")
+    st.subheader("🌟 Featured Research")
 else:
     display_df = filtered_df
     st.subheader(f"Results ({len(display_df)})")
 
-# -----------------------------
+# --------------------------------------------------
 # Display results
-# -----------------------------
+# --------------------------------------------------
 if display_df.empty:
     st.info("No results match the selected filters.")
 else:
@@ -131,5 +159,3 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
-
-
