@@ -11,16 +11,19 @@ st.set_page_config(
 st.title("SHINE Research Explorer")
 
 # Database connection
+# SQLite connection
+@st.cache_resource
 def get_connection():
-    return pyodbc.connect(
-        "DRIVER={ODBC Driver 17 for SQL Server};"
-        f"SERVER={st.secrets['db']['server']};"
-        f"DATABASE={st.secrets['db']['database']};"
-        f"UID={st.secrets['db']['user']};"
-        f"PWD={st.secrets['db']['password']}"
-    )
+    return sqlite3.connect("shine.db", check_same_thread=False)
 
 conn = get_connection()
+
+@st.cache_data
+def load_search_data():
+    query = "SELECT * FROM research_search"
+    return pd.read_sql(query, conn)
+
+df = load_search_data()
 
 # Load data
 def load_search_data():
@@ -104,4 +107,5 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
 
