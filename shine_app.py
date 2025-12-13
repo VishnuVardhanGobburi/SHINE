@@ -2,39 +2,29 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-# --------------------------------------------------
 # Page config
-# --------------------------------------------------
 st.set_page_config(
     page_title="SHINE Research Explorer",
     layout="wide"
 )
 
-st.title("📚 SHINE Research Explorer")
+st.title("SHINE Research Explorer")
 st.caption("Browse and search annotated scholarship in distance education")
 
-# --------------------------------------------------
 # SQLite connection
-# --------------------------------------------------
-@st.cache_resource
 def get_connection():
     return sqlite3.connect("shine1.db", check_same_thread=False)
 
 conn = get_connection()
 
-# --------------------------------------------------
 # Load aggregated data from SQLite
-# --------------------------------------------------
-@st.cache_data
 def load_data():
     query = "SELECT * FROM research_search"
     return pd.read_sql(query, conn)
 
 df = load_data()
 
-# --------------------------------------------------
 # Safely explode authors & keywords (for filters only)
-# --------------------------------------------------
 def explode_for_filters(df):
     # Explode authors
     authors_df = (
@@ -59,9 +49,7 @@ def explode_for_filters(df):
 
 authors_df, keywords_df = explode_for_filters(df)
 
-# --------------------------------------------------
 # Sidebar filters
-# --------------------------------------------------
 st.sidebar.header("🔍 Filters")
 
 authors = ["All"] + sorted(
@@ -93,9 +81,7 @@ year_range = st.sidebar.slider(
 
 search_text = st.sidebar.text_input("Search title or annotation")
 
-# --------------------------------------------------
 # Apply filters (on aggregated dataframe)
-# --------------------------------------------------
 filtered_df = df.copy()
 
 if selected_author != "All":
@@ -119,9 +105,7 @@ if search_text:
         filtered_df["annotation"].str.contains(search_text, case=False, na=False)
     ]
 
-# --------------------------------------------------
 # Featured vs Search logic
-# --------------------------------------------------
 show_featured_only = (
     not search_text
     and selected_author == "All"
@@ -135,16 +119,13 @@ if show_featured_only:
             by=["publication_year", "source_timestamp"],
             ascending=False
         )
-        .head(2)
     )
-    st.subheader("🌟 Featured Research")
+    st.subheader("Featured Research")
 else:
     display_df = filtered_df
     st.subheader(f"Results ({len(display_df)})")
 
-# --------------------------------------------------
 # Display results
-# --------------------------------------------------
 if display_df.empty:
     st.info("No results match the selected filters.")
 else:
@@ -158,3 +139,4 @@ else:
             st.markdown("---")
             st.markdown("**Annotation:**")
             st.write(row["annotation"])
+
